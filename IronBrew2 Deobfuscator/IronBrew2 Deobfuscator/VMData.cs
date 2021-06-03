@@ -32,6 +32,9 @@ namespace IronBrew2_Deobfuscator
             interpreter = ReplaceOp(interpreter, "LOADK", Recognizers.Opcodes.LoadK());
             interpreter = ReplaceOp(interpreter, "RETURN", Recognizers.Opcodes.Return());
 
+            // allah yok dinin yalan //
+
+            interpreter = ReplaceOp(interpreter, "NO_OP", Recognizers.Opcodes.OP_NextInstruction());
 
             return interpreter;
         }
