@@ -9,6 +9,10 @@ namespace IronBrew2_Deobfuscator
 {
     public static class Deobfuscator
     {
+        public class IronBrewVM
+        {
+            public string Interpreter { get; set; }
+        }
         public static string MinifyScript(string script, string path)
         {
             Debug.Log("[!] Minifying...");
@@ -48,8 +52,8 @@ namespace IronBrew2_Deobfuscator
             Debug.Log("[*] Loaded script");
             File.WriteAllText($"{path}/raw.txt", raw);
             raw = MinifyScript(raw, path);
-
-
+            string _interpreter = VMData.FindInterpreter(raw);
+            File.WriteAllText($"{path}/interpreter.txt", _interpreter);
 
             return "";
         }

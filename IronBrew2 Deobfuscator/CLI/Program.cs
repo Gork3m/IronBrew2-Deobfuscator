@@ -13,7 +13,7 @@ namespace CLI
         {
             Debug.Log("[*] Starting..", ConsoleColor.Green);
             string raw = File.ReadAllText(args[0]);
-            File.WriteAllText("Deobfuscated_" + DateTime.Now + ".txt", Deobfuscator.DeobfuscateScript(raw));
+            File.WriteAllText("Deobfuscated_" + DateTime.Now.ToString().Replace("/","-").Replace(":","-") + ".txt", Deobfuscator.DeobfuscateScript(raw));
 
             Console.ReadKey();
         }
