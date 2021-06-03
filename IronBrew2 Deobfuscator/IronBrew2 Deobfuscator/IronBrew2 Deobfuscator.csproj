@@ -5,4 +5,8 @@
     <RootNamespace>IronBrew2_Deobfuscator</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MoonSharp" Version="2.0.0" />
+  </ItemGroup>
+
 </Project>

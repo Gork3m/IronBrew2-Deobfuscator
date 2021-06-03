@@ -16,6 +16,10 @@ namespace IronBrew2_Deobfuscator
             {
                 return @"if ?\(?(\w+)[<>=]{1,2}[0-9] ?\)?then";
             }
+            public static string DeserializedTables()
+            {
+                return @"return ?\(?function\(\.\.\.\)local (\w+?)=\w+?;? ?local (\w+?)=\w+?;? ?local (\w+?)=\w+?;? ?";
+            }
             
         }
 
