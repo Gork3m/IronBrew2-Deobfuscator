@@ -6,5 +6,8 @@ namespace IronBrew2_Deobfuscator
 {
     public static class VMData
     {
+
+
+
     }
 }
