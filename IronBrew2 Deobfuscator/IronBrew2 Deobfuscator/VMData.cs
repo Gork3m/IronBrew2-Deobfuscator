@@ -27,19 +27,36 @@ namespace IronBrew2_Deobfuscator
 
         public static string ReplaceOpcodes(string interpreter)
         {
-            interpreter = ReplaceOp(interpreter, "CALL_B2_C1", Recognizers.Opcodes.Call.Call_B2_C1());
-            interpreter = ReplaceOp(interpreter, "GETGLOBAL", Recognizers.Opcodes.GetGlobal());
-            interpreter = ReplaceOp(interpreter, "LOADK", Recognizers.Opcodes.LoadK());
-            interpreter = ReplaceOp(interpreter, "RETURN", Recognizers.Opcodes.Return());
+            OpcodeIDs opcodeIDs = new OpcodeIDs()
+            {
+                opidx = 0
+            };
+            interpreter = ReplaceOp(interpreter, "CALL_B2_C1", Recognizers.Opcodes.Call.Call_B2_C1(),ref opcodeIDs);
+            interpreter = ReplaceOp(interpreter, "GETGLOBAL", Recognizers.Opcodes.GetGlobal(),ref opcodeIDs);
+            interpreter = ReplaceOp(interpreter, "LOADK", Recognizers.Opcodes.LoadK(),ref opcodeIDs);
+            interpreter = ReplaceOp(interpreter, "RETURN", Recognizers.Opcodes.Return(),ref opcodeIDs);
 
             // allah yok dinin yalan //
 
-            interpreter = ReplaceOp(interpreter, "NO_OP", Recognizers.Opcodes.OP_NextInstruction());
+            interpreter = ReplaceOp(interpreter, "NO_OP", Recognizers.Opcodes.OP_NextInstruction(), ref opcodeIDs);
 
             return interpreter;
         }
 
-        private static string ReplaceOp(string interpreter, string opcodename, string rgx)
+        public class OpcodeIDs
+        {
+            public int opidx { get; set; }
+        }
+        public static string Pad(string text)
+        {
+            string ret = text;
+            for (int i = 0; i < (6 - text.Length); i++)
+            {
+                ret = "0" + ret;
+            }
+            return ret;
+        }
+        private static string ReplaceOp(string interpreter, string opcodename, string rgx, ref OpcodeIDs opcodeIDs)
         {
             Regex regex = new Regex(rgx, RegexOptions.Singleline);
             var matches = regex.Matches(interpreter);
@@ -49,7 +66,8 @@ namespace IronBrew2_Deobfuscator
                 string before = interpreter.Substring(0, diff + m.Index);
                 string after = interpreter.Substring(m.Index + m.Length + diff);
 
-                string _new = before + " print('ENUM:' .. enumval .. ' | OPCODE:" + opcodename + "'); " + after;
+                string _new = before + (opcodename == "NO_OP" ? " NO_OP_USED=true; " : (" appendOpcode('ENUM:' .. enumval .. ' | OPCODE:" + opcodename + "', "+opcodeIDs.opidx+"); ")) + after;
+                opcodeIDs.opidx++;
                 diff += _new.Length - interpreter.Length;
 
                 interpreter = _new;
