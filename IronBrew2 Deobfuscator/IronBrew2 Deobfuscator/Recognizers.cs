@@ -18,7 +18,7 @@ namespace IronBrew2_Deobfuscator
             }
             public static string DeserializedTables()
             {
-                return @"return ?\(?function\(\.\.\.\)local (\w+?)=\w+?;? ?local (\w+?)=\w+?;? ?local (\w+?)=\w+?;? ?";
+                return @"local function \w+?\((\w), ?\w, ?\w\)(.{1,100})(return\(? ?function\(\.\.\.\))";
             }
             
         }
@@ -46,10 +46,14 @@ namespace IronBrew2_Deobfuscator
 
             public static class Call
             {
-                public static string Call_B2_C1()
-                {
+                public static string Call_B2_C1() {
                     return @"(local)? ?\w+=\w+\[[0-9]\] ?;?\w+\[\w+\]\(\w+\[\w+\+[0-9]\]\);? ?";
                 }
+
+                public static string Call_B2_C2() {
+                    return @"(local)? ?\w+=\w+\[[0-9]\] ?;?\w+\[\w\] ?= ?\w+\[\w+\]\(\w+\[\w+\+[0-9]\]\);? ?";
+                }
+
             }
         }
     }
