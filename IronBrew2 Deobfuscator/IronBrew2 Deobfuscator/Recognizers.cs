@@ -4,44 +4,52 @@ using System.Text;
 
 namespace IronBrew2_Deobfuscator
 {
-    public static class Recognizers
-    {
-        public static class VM
-        {
-            public static string Interpreter()
-            {
+    public class Recognizers {
+        public static class VM {
+            public static string Interpreter() {
                 return @"while true do \w+=\w+\[\w+\];? ?\w+=\w+\[[0-9]\];? ?(.+?)\w+=\w+\+1;? ?end;? ?end\)?;? ?end;? ?return \w+\(";
             }
-            public static string InterpreterEnumerator()
-            {
+            public static string InterpreterEnumerator() {
                 return @"if ?\(?(\w+)[<>=]{1,2}[0-9] ?\)?then";
             }
-            public static string DeserializedTables()
-            {
-                return @"local function \w+?\((\w), ?\w, ?\w\)(.{1,100})(return\(? ?function\(\.\.\.\))";
+            public static string DeserializerFunction() {
+                return @"end ?;?(return \w+\((\w+)\(\),\{\}.{2,20}$)";
             }
-            
+
+            public static string InstName() {
+                return @"local (\w+?) ?;?local \w+? ?;?while true do";
+            }
+
+            public static string EnvName() {
+                return @"local function \w+?\(\w, ?\w, ?(\w)\)(?:.{1,100})(?:return\(? ?function\(\.\.\.\))";
+
+            }
+            public static string StackName() {
+                return @"#',\.\.\.\)-1 ?;?local .{3,10}(?:local (\w+) ?= ?\{\} ?;?for) \w+?=0";
+            }
+
         }
 
-        public static class Opcodes
+
+        public class Opcodes
         {
-            public static string OP_NextInstruction()
+            public static string OP_NextInstruction(Deobfuscator.IronBrewVM vm)
             {
                 return @"(\w+?=\w+?\+1;? ?\w+?=\w+?\[\w+?\];?)";
             }
-            public static string GetGlobal()
+            public static string GetGlobal(Deobfuscator.IronBrewVM vm)
             {
-                return @"\w+\[\w+\[[0-9]\]\] *?= *?\w+\[\w+\[[0-9]\]\];";
+                return $@"{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\] *?= *?{vm.EnvName}\[{vm.InstructionName}\[[0-9]\]\];";
             }
 
-            public static string LoadK()
+            public static string LoadK(Deobfuscator.IronBrewVM vm)
             {
-                return @"\w+\[\w+\[[0-9]\]\] *?= *?\w+\[[0-9]\];";
+                return $@"{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\] *?= *?{vm.InstructionName}\[[0-9]\];";
             }
 
-            public static string Move()
+            public static string Move(Deobfuscator.IronBrewVM vm)
             {
-                return @"\w+?\[\w+?\[[0-9]\]\] *?= *?\w+?\[\w+?\[[0-9]\]\];?";
+                return $@"{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\] *?= *?{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\];?";
             }
 
             public static string Return()
@@ -54,9 +62,9 @@ namespace IronBrew2_Deobfuscator
                 return @"for \w+ *?=\w+\[[0-9]\],\w+\[[0-9]\] do \w+\[\w+]*?=nil;?end;?";
             }
 
-            public static string GetUpVal()
+            public static string GetUpVal(Deobfuscator.IronBrewVM vm)
             {
-                return @"\w+\[\w+\[[0-9]\]\]*?=\w+\[\w+\[[0-9]\]\];?";
+                return $@"{vm.StackName}\[{vm.InstructionName}\[2\]\]=\w+\[{vm.InstructionName}\[3\]\];?";
             }
 
             public static string SetGlobal()
@@ -79,24 +87,30 @@ namespace IronBrew2_Deobfuscator
                 return @"\w+\[\w+\[[0-9]\]\]=\(?not \w+\[\w+\[[0-9]\]\]\)?;?";
             }
 
-            public static string Len()
+            public static string Len(Deobfuscator.IronBrewVM vm)
             {
-                return @"\w+\[\w+\[[0-9]\]\]=#\w+\[\w+\[[0-9]\]\];?";
+                return $@"{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]=#{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\];?";
             }
 
-            public static string Concat()
+            public static string Concat(Deobfuscator.IronBrewVM vm)
             {
-                return @"local \w+=\w+\[[0-9]\];?local \w+=\w+\[\w+\] for \w+=\w+\+1,\w+\[[0-9]\] do \w+=\w+..\w+\[\w+\];?end;\w+\[\w+\[[0-9]\]\]=\w+;?";
+                
+                return $@"(local )?\w+={vm.InstructionName}\[[0-9]\];? ?(local )?\w+={vm.StackName}\[\w+\];? ?for \w+=\w+\+1,{vm.InstructionName}\[[0-9]\]do \w+=\w+\.\.{vm.StackName}\[\w\];? ?end;? ?{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]=a;? ?";
             }
 
-            public static string Jmp()
+            public static string Jmp(Deobfuscator.IronBrewVM vm)
             {
-                return @"\w+=\w+\+\w+\[[[0-9]\];?";
+                return $@"\w+={vm.InstructionName}\[[0-9]\];?";
             }
-            
-            public static string Closure()
-            {
-                return @"local \w+=\w+\[\w+\[[0-9]\]\];local \w+;local \w+={};\w+=\w+\({},{__index=function\(\w+,\w+\)local \w+=\w+\[\w+\];return \w+\[1\]\[\w+\[2\]\];end,__newindex=function\(\w+,\w+,\w+\)local \w+=\w+\[\w+\] \w+\[1\]\[\w+\[2\]\]=\w+;end;}\);for \w+=1,\w+\[1\] do \w+=\w+\+1;local \w+=\w+\[\w+\];if \w+\[[0-99]]==[0-99] then \w+\[\w+-1\]={\w+,\w+\[[0-9]]};else \w+\[\w+-1\]={\w+,\w+\[[0-9]\]};end;\w+\[#\w+\+1\]=\w+;end;\w+\[\w+\[[0-9]\]\]=\w+\(\w+,\w+,\w+\);";
+
+            public static class Closure {
+                public static string ClosureActual(Deobfuscator.IronBrewVM vm) {
+                    return $@"(local )?\w+=\w+\[{vm.InstructionName}\[[0-9]\]\];? ?(local \w+;?)? ?;?(local )?\w+=\{{\}} ?;?\w+=\w+\(\{{\}},.{{20,}}?#\w+\+1\]=\w+ ?;?end;? ?{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]=\w+\(\w+,\w+,{vm.EnvName}\);? ?";
+
+                }
+                public static string ClosureNU(Deobfuscator.IronBrewVM vm) {
+                    return $@"{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]=\w+\(\w+\[{vm.InstructionName}\[[0-9]\]\],nil,{vm.EnvName}\);? ?";
+                }
             }
 
             public static string ForLoop()
@@ -341,24 +355,40 @@ namespace IronBrew2_Deobfuscator
 
             public static class Eq
             {
-                public static string EqA()
+                public static string EqA(Deobfuscator.IronBrewVM vm)
                 {
-                    return @"if\(?\w+\[\w+\[[0-9]\]\]==\w+\[\w+\[[0-9]\]\]\)?then \w+=\w+\+1;else \w+=\w+\+\w+\[[0-9]\];end;";
+                    return $@"if\({vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]=={vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
                 }
-                
-                public static string EqB()
-                {
-                    return @"if\(?\w+\[\w+\[[0-9]\]\]==\w+\[\w+\[[0-9]\]\]\)?then \w+=\w+\+1;else \w+=\w+\+\w+\[[0-9]\];end;?";
+
+                public static string EqB(Deobfuscator.IronBrewVM vm) {
+                    return $@"if\({vm.InstructionName}\[[0-9]\]\=={vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
                 }
-                
-                public static string EqC()
+
+                public static string EqC(Deobfuscator.IronBrewVM vm)
                 {
-                    return @"if\(?\w+\[\w+\[[0-9]\]\]==\w+\[\w+\[[0-9]\]\]\)?then \w+=\w+\+1;else \w+=\w+\+\w+\[[0-9]\];end;";
+                    return $@"if\({vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]=={vm.InstructionName}\[[0-9]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
                 }
-                
-                public static string EqD()
-                {
-                    return @"if\(?\w+\[\w+\[[0-9]\]\]==\w+\[\w+\[[0-9]\]\]\)? then \w+=\w+\+1;else \w+=\w+\+\w+\[[0-9]\];end;?";
+
+                public static string EqD(Deobfuscator.IronBrewVM vm) {
+                    return $@"if\({vm.InstructionName}\[[0-9]\]=={vm.InstructionName}\[[0-9]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
+                }
+            }
+
+            public static class Neq {
+                public static string NeqA(Deobfuscator.IronBrewVM vm) {
+                    return $@"if\({vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]~={vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
+                }
+
+                public static string NeqB(Deobfuscator.IronBrewVM vm) {
+                    return $@"if\({vm.InstructionName}\[[0-9]\]\~={vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
+                }
+
+                public static string NeqC(Deobfuscator.IronBrewVM vm) {
+                    return $@"if\({vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]~={vm.InstructionName}\[[0-9]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
+                }
+
+                public static string NeqD(Deobfuscator.IronBrewVM vm) {
+                    return $@"if\({vm.InstructionName}\[[0-9]\]~={vm.InstructionName}\[[0-9]\]\) ?then \w+=\w+\+1;? ?else \w+={vm.InstructionName}\[[0-9]\];? ?end;? ?";
                 }
             }
 
@@ -440,6 +470,15 @@ namespace IronBrew2_Deobfuscator
 
             public static class Call
             {
+                public static string CallC2B2(Deobfuscator.IronBrewVM vm) {
+                    return $@"(local )?\w+={vm.InstructionName}\[[0-9]\];? ?{vm.StackName}\[\w+\]={vm.StackName}\[\w+\]\({vm.StackName}\[\w+\+1\]\);? ?";
+                }
+                public static string CallC1B2(Deobfuscator.IronBrewVM vm) {
+                    return $@"(local )?\w+={vm.InstructionName}\[[0-9]\];? ?{vm.StackName}\[\w+\]\({vm.StackName}\[\w+\+1\]\);? ?";
+                }
+                public static string CallC1B1(Deobfuscator.IronBrewVM vm) {
+                    return $@"{vm.StackName}\[{vm.InstructionName}\[[0-9]\]\]\(\);? ?";
+                }
                 public static string CallA()
                 {
                     return @"local \w+=\w+\[\d\];local \w+={};local \w+=0;local \w+=\w+\+\w+\[\d]-1;for \w+=\w+\+1,\w+ do \w+=\w+\+1;\w+\[\w+]=\w+\[\w+\];end;local \w+={\w+\[\w+\]\(?Unpack\(\w+,1,\w+-\w+\)?\)?};local \w+=\w+\+\w+\[\d]-2;\w+=0;for \w+=\w+,\w+ do \w+=\w+\+1;\w+\[\w+]=\w+\[\w+];end;\w+=\w+;?";
